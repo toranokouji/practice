@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+   <h1>計算ランニング</h1> 
+  <style>
+    header {
+      width: 100%;
+      background-color: #004c99; /* タイトル専用の背景色 */
+      padding: 20px 0;
+      text-align: center;
+      color: white;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+    }
+
+    header h1 {
+      margin: 0;
+      font-size: 28px;
+    }
+
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: linear-gradient(135deg, #0078d7, #f2f3f4);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      min-height: 95vh;
+      margin: 0;
+      padding: 20px;
+      color: #333;
+    }
+
+    h1 {
+      height: 60px;
+      line-height: 60px;
+      font-size: 28px;
+      width: 100%;
+      background: linear-gradient(to right, #003366);
+      text-align: center;
+      color: white;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+      margin: 0;
+      font-weight: bold;
+    }
+
+
+    section {
+      background: #fff;
+      padding: 20px;
+      margin: 10px 0;
+      border-radius: 10px;
+      width: 90%;
+      max-width: 500px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+    }
+
+    section2 {
+      padding: 10px;
+      margin: -10px 0;
+      border-radius: 10px;
+      width: 90%;
+      max-width: 520px;
+    }
+
+    section h2 {
+      margin-top: 0;
+      font-size: 18px;
+      color: #0078d7;
+    }
+
+    .button-group {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-top: 10px;
+    }
+
+    .button-group button {
+      flex: 1;
+      padding: 10px;
+      font-size: 16px;
+      border: none;
+      border-radius: 6px;
+      background: #eee;
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+
+    .button-group button:hover {
+      background: #ccc;
+    }
+
+    .button-group button.selected {
+      background: #0078d7;
+      color: white;
+      font-weight: bold;
+    }
+
+    .button-row {
+      display: flex;
+      gap: 10px;
+      width: 100%;
+      max-width: 500px;
+      margin-top: 30px;
+    }
+
+    #ONCE, #TOP {
+      flex: 1;
+      padding: 12px 30px;
+      font-size: 18px;
+      background: #0078d7;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+
+    #ONCE:hover, #TOP:hover {
+      background: #005a9e;
+    }
+
+  </style>
+</head>
+<body>
+  <section>
+    <div id="score" style="text-align: center;"></div>
+  </section>
+  <section>
+    <div id="distance" style ="font-size: 20px;"></div>
+  </section>
+  <section>
+    <div class="comment" id="comment" style ="font-size: 20px;"></div>
+  </section>
+  <div class="button-row"> 
+    <button id="ONCE">もう一度</button> 
+    <button id="TOP">TOP画面へ戻る</button> 
+  </div>
+  
+
+
+  <script>
+    let minutesMs = localStorage.getItem('minutes');
+    let distance = localStorage.getItem('distance');
+    let score = localStorage.getItem('score');
+    let age = localStorage.getItem('age');
+    let questionType = localStorage.getItem('questionType');
+    let difficulty = localStorage.getItem('difficulty');
+
+    minutes = minutesMs / 60000;
+    document.getElementById('score').innerHTML = `
+    <div style="text-align: left;font-size: 20px;">獲得した点数は...</div>
+    <div style="text-align: center; font-size: 4em; font-weight: bold;">${score}点</div>
+    `;
+    if (distance >= 100000) {
+        // 100000cm = 1km
+        distance = distance / 100000;
+        document.getElementById('distance').innerText = "距離：　" + distance.toFixed(2) + "km";
+        //走行距離が1km未満の場合、mで小数第2までを表示
+    } else {
+        // 100cm = 1m
+        distance = distance / 100;
+        document.getElementById('distance').innerText = "距離：　" + distance.toFixed(2) + "m";
+    }
+
+    if(minutes == 1){
+      if(score < 5){
+        document.getElementById('comment').innerText = "もう少し頑張りましょう。。。";
+      }else if(score <= 10){
+        document.getElementById('comment').innerText = "いい感じ！";
+      }else if(score > 10){
+        document.getElementById('comment').innerText = "素晴らしい！";
+      }
+    }else if(minutes == 3){
+      if(score < 15){
+        document.getElementById('comment').innerText = "もう少し頑張りましょう。。。";
+      }else if(score <= 30){
+        document.getElementById('comment').innerText = "いい感じ！";
+      }else if(score > 30){
+        document.getElementById('comment').innerText = "素晴らしい！";
+      }
+    }else if(minutes == 5){
+      if(score < 25){
+        document.getElementById('comment').innerText = "もう少し頑張りましょう。。。";
+      }else if(score <= 50){
+        document.getElementById('comment').innerText = "いい感じ！";
+      }else if(score > 50){
+        document.getElementById('comment').innerText = "素晴らしい！";
+      }
+    }
+
+    document.getElementById('ONCE').addEventListener('click', () => {
+      localStorage.setItem('minutes', minutesMs);
+      localStorage.setItem('age', age);
+      localStorage.setItem('questionType', questionType);
+      localStorage.setItem('difficulty', difficulty);
+      window.location.href = 'running.html';
+    });
+
+    document.getElementById('TOP').addEventListener('click', () => {
+      window.location.href = 'top.html';
+    });
+    
+  
+  </script>
+</html>

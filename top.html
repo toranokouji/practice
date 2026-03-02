@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+ 
+   <h1>計算ランニング</h1>
+  
+  <style>
+    header {
+      width: 100%;
+      background-color: #004c99; /* タイトル専用の背景色 */
+      padding: 20px 0;
+      text-align: center;
+      color: white;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+    }
+
+    header h1 {
+      margin: 0;
+      font-size: 28px;
+    }
+
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: linear-gradient(135deg, #0078d7, #f2f3f4);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      min-height: 95vh;
+      margin: 0;
+      padding: 20px;
+      color: #333;
+    }
+
+    h1 {
+      height: 60px;
+      line-height: 60px;
+      font-size: 28px;
+      width: 100%;
+      background: linear-gradient(to right,#003366);
+      text-align: center;
+      color: white;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+      margin: 0;
+      font-weight: bold;
+    }
+
+
+    section {
+      background: #fff;
+      padding: 20px;
+      margin: 10px 0;
+      border-radius: 10px;
+      width: 90%;
+      max-width: 500px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+    }
+
+    section h2 {
+      margin-top: 0;
+      font-size: 18px;
+      color: #0078d7;
+    }
+
+    .button-group {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-top: 10px;
+    }
+
+    .button-group button {
+      flex: 1;
+      padding: 10px;
+      font-size: 16px;
+      border: none;
+      border-radius: 6px;
+      background: #eee;
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+
+    .button-group button:hover {
+      background: #ccc;
+    }
+
+    .button-group button.selected {
+      background: #0078d7;
+      color: white;
+      font-weight: bold;
+    }
+
+    #startQuiz {
+      margin-top: 30px;
+      padding: 12px 30px;
+      font-size: 18px;
+      background: #0078d7;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+
+    #startQuiz:hover {
+      background: #005a9e;
+    }
+  </style>
+</head>
+<body>
+  
+
+  <!-- 問題カテゴリ -->
+  <section>
+    <h2>問題カテゴリ</h2>
+    <div class="button-group" id="questionType">
+      <button data-type="calc_plus">足し算</button>
+      <button data-type="calc_multiplication">掛け算</button>
+      <button data-type="brain_training">脳トレ</button>
+    </div>
+  </section>
+
+  <!-- 難易度 -->
+  <section>
+    <h2>難易度</h2>
+    <div class="button-group" id="difficulty">
+      <button data-level="easy">かんたん</button>
+      <button data-level="normal">ふつう</button>
+      <button data-level="hard">むずかしい</button>
+    </div>
+  </section>
+
+  <!-- クイズ時間 -->
+  <section>
+    <h2>クイズ時間</h2>
+    <div class="button-group" id="time">
+      <button data-minutes="60000">1分</button>
+      <button data-minutes="180000">3分</button>
+      <button data-minutes="300000">5分</button>
+    </div>
+  </section>
+
+  <!-- 年代 -->
+  <section>
+    <h2>年代</h2>
+    <div class="button-group" id="age">
+      <button data-age="25">20代</button>
+      <button data-age="35">30代</button>
+      <button data-age="45">40代</button>
+      <button data-age="55">50代</button>
+      <button data-age="65">60代</button>
+    </div>
+  </section>
+
+  <!-- スタートボタン -->
+  <button id="startQuiz">クイズスタート</button>
+
+  <script>
+    function setupSelection(groupId, storageKey) {
+      const group = document.getElementById(groupId);
+      const buttons = group.querySelectorAll('button');
+
+      buttons.forEach(btn => {
+        btn.addEventListener('click', () => {
+          buttons.forEach(b => b.classList.remove('selected'));
+          btn.classList.add('selected');
+
+          const value = btn.dataset.type || btn.dataset.level || btn.dataset.minutes || btn.dataset.age;
+          localStorage.setItem(storageKey, value);
+        });
+      });
+    }
+
+    setupSelection('questionType', 'questionType');
+    setupSelection('difficulty', 'difficulty');
+    setupSelection('time', 'minutes');
+    setupSelection('age', 'age');
+
+    document.getElementById('startQuiz').addEventListener('click', () => {
+      window.location.href = 'running.html';
+    });
+  </script>
+</body>
+
+</html>
+

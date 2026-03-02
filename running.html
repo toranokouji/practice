@@ -1,0 +1,871 @@
+<html><head>
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.15.0"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/pose-detection"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/pose"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.7.3/Chart.min.js"></script><style type="text/css">/* Chart.js */
+  @-webkit-keyframes chartjs-render-animation{from{opacity:0.99}to{opacity:1}}@keyframes chartjs-render-animation{from{opacity:0.99}to{opacity:1}}.chartjs-render-monitor{-webkit-animation:chartjs-render-animation 0.001s;animation:chartjs-render-animation 0.001s;}</style><style type="text/css">/* Chart.js */
+  @-webkit-keyframes chartjs-render-animation{from{opacity:0.99}to{opacity:1}}@keyframes chartjs-render-animation{from{opacity:0.99}to{opacity:1}}.chartjs-render-monitor{-webkit-animation:chartjs-render-animation 0.001s;animation:chartjs-render-animation 0.001s;}</style><style type="text/css">/* Chart.js */
+  @-webkit-keyframes chartjs-render-animation{from{opacity:0.99}to{opacity:1}}@keyframes chartjs-render-animation{from{opacity:0.99}to{opacity:1}}.chartjs-render-monitor{-webkit-animation:chartjs-render-animation 0.001s;animation:chartjs-render-animation 0.001s;}</style>
+
+<style>
+  body {
+      font-family: 'Segoe UI', sans-serif;
+      background: linear-gradient(135deg, #0078d7, #f2f3f4);
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-start;
+      min-height: 95vh;
+      margin: 0;
+      padding: 20px;
+      color: #333;
+    }
+</style>
+</head>
+
+<body style="
+    height: 100VH;
+    margin: 0;
+    overflow: hidden;
+">
+  <!-- 左手首を検知し、赤い枠で追いかける・右手首を検知し、青い枠で追いかける -->
+
+  <div style="display:flex;flex-direction: column;height: 95%; gap: 10px;">
+    <h2 style="
+      height: 60px;
+      line-height: 60px;
+      font-size: 28px;
+      width: 100%;
+      background: linear-gradient(to right, #003366);
+      text-align: center;
+      color: white;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+      margin: 0;
+      font-weight: bold;
+    ">計算ランニング</h2>
+    <div style="display:flex; gap: 10px;">
+      <button onclick="fetchGeminiQuestion();">テスト</button>
+      <button onclick="detectLevel -= 0.05;">🔽</button>
+      <button onclick="detectLevel += 0.05;">🔼</button>
+    </div>
+    <div style="display:flex;height: 12%;background-color: white;gap: 30px;border: 1px solid black;border-radius: 10px;">
+      <div style="display: flex; gap: 10px; align-items: center;padding:20px;font-size: 20px;">
+        <div>残り時間</div>
+        <div id="countDown" style="border: 1px solid black; width: 200px; height: 30px;place-content:center;padding-left: 10px;"></div>
+      </div>
+      <div style="align-items: center; display: flex; gap: 10px;font-size: 20px;">
+        <div>獲得点数</div>
+        <div id="scoreShow" style="border: 1px solid black; width: 200px; height: 30px;place-content:center;padding-left: 10px;"></div>
+      </div>
+    </div>
+    <div style="display:flex;height: 30%;align-items: center;justify-content: center;gap: 20px;padding:
+      20px; border: 1px solid black;background-color: white;border-radius: 10px;">
+      <div id="question" style="font-size: 60px;height: 80%;width: 70%;margin-left: 20px;text-align: center;
+        align-content: center;">
+        問題が出ます   
+      </div>
+      <div id="number_result_parent" style="font-size: 57px; position:relative; font-size:60px;height: 80%;width: 30%;
+        border: 1px solid black; align-content: center; text-align-last: center;">
+          <div id="number_result" style="
+                  font-size: 80px;
+                  position: absolute;
+                  justify-self: center;
+                  align-self: center;">
+          </div>
+         <div id="maru" style="
+                  font-size: 227px;
+                  position: absolute;
+                  font-weight: bold;
+                  color: red;
+                  display: none;
+                  z-index: 99999;
+                  justify-self: center;
+                  align-self: center;">◎
+          </div>
+
+          <div id="batu"
+               style="
+                  font-size: 227px;
+                  position: absolute;
+                  font-weight: bold;
+                  color: blue;
+                  display: none;
+                  z-index: 99999;
+                  justify-self: center;
+                  align-self: center;
+                  margin-top: -41px;
+               ">
+            ×
+          </div>
+          <div id="instruction"
+               style="
+                  font-size: 18px;
+                  position: absolute;
+                  font-weight: bold;
+                  color: blue;
+                  display: block;
+                  z-index: 99999;
+                  justify-self: center;
+                  align-self: center;
+               ">
+            走ってください
+          </div>
+      </div>
+    </div>
+    <div style="display: flex;height: 15%;align-items: center; border: 1px solid black;background-color: white;padding: 20px;border-radius: 10px;">
+      <div id="fullVoice_result" style="margin-left: 20px;font-size: 40px;"></div>
+    </div>
+    <div style="display:flex;height: 30%; gap: 5px;background-color: white;border-radius: 10px;padding:20px">
+      <div id="graph" style="width:30%; border: 1px solid black;background-color: white;">
+        <div class="graph" style="
+          /* PC向け */ 
+          #myChart { width: 600px; height: 400px; } 
+          /* スマホ向け（画面幅600px以下） */ 
+          @media (max-width: 600px) { #myChart { width: 300px; height: 100px; } }">
+        </div>
+        <canvas id="chart" style="display: block; height: 100%; width: 100%;justify-content: center; align-items: center;"></canvas>
+      </div>
+      <div id="movie" style="width:40%; place-items: center;">
+        <div id="video_parent">
+          <video id="video" style="position: relative; z-index:1;" autoplay="" playsinline=""></video>
+          <div id="left_rect" style="display:none; position: absolute; z-index: 10; width: 30px; height: 30px; border: 2px solid red; top: 809.925px; left: 426.338px;"></div>
+          <div id="right_rect" style="display:none; position: absolute; z-index: 10; width: 30px; height: 30px; border: 2px solid blue; top: 807.448px; left: 338.259px;"></div>
+        </div>
+      </div>
+      <div id="detail" style="
+        width: 30%;
+        border: 1px solid black;
+        background-color: white;
+        font-size: 20px;
+        padding: 10px;
+        display: flex;
+        flex-direction: column;
+        height: 91%; /* 必要に応じて高さを調整 */
+      ">
+        <div id="distanceshow"></div>
+        <div id="speed"></div>
+        <div style="flex-grow: 1;"></div>
+        <button id="TOP" style="
+          padding: 12px 30px;
+          font-size: 18px;
+          background: #0078d7;
+          color: white;
+          border: none;
+          border-radius: 8px;
+          cursor: pointer;
+          transition: background 0.3s;
+          align-self: flex-end; /* 右寄せ */"
+          onclick = "window.location.href = 'top.html';"
+        >
+          TOP画面へ戻る
+        </button>
+      </div>
+
+  
+  <div style="display:none;">
+    <h2>問題文</h2>
+    <div id="poses"></div>
+    <div style="display:flex; gap: 15px;">
+      <span>左手首の位置:</span>
+      <div id="div_left_wrist"></div>
+      <div id="div_left_diff"></div>
+    </div>
+    <div style="display:flex; gap: 15px;">
+      <span>右手首の位置:</span>
+      <div id="div_right_wrist"></div>
+      <div id="div_right_diff"></div>
+    </div>
+    <span id="current_count"></span>
+    <span id="current_status">止まってる</span>
+    <textarea id="question" rows="4" cols="40">    走りながらでも解ける問題を読み上げます。
+    </textarea>
+
+    <h3>読み上げ速度</h3>
+    <input type="range" id="rate" min="0.5" max="2" step="0.1" value="1">
+
+    <h3>声の種類</h3>
+    <select id="voiceSelect"><option value="0">Microsoft Ayumi - Japanese (Japan) (ja-JP)</option><option value="1">Microsoft Haruka - Japanese (Japan) (ja-JP)</option><option value="2">Microsoft Ichiro - Japanese (Japan) (ja-JP)</option><option value="3">Microsoft Sayaka - Japanese (Japan) (ja-JP)</option><option value="4">Microsoft Aria Online (Natural) - English (United States) (en-US)</option><option value="5">Microsoft Guy Online (Natural) - English (United States) (en-US)</option><option value="6">Microsoft Xiaoxiao Online (Natural) - Chinese (Mainland) (zh-CN)</option><option value="7">Microsoft Yunyang Online (Natural) - Chinese (Mainland) (zh-CN)</option><option value="8">Microsoft HanHan Online - Chinese (Taiwan) (zh-TW)</option><option value="9">Microsoft Tracy Online - Chinese (Hong Kong) (zh-HK)</option><option value="10">Microsoft Nanami Online (Natural) - Japanese (Japan) (ja-JP)</option><option value="11">Microsoft Libby Online (Natural) - English (United Kingdom) (en-GB)</option><option value="12">Microsoft Francisca Online (Natural) - Portuguese (Brazil) (pt-BR)</option><option value="13">Microsoft Dalia Online (Natural) - Spanish (Mexico) (es-MX)</option><option value="14">Microsoft Priya Online - English (India) (en-IN)</option><option value="15">Microsoft Heather Online - English (Canada) (en-CA)</option><option value="16">Microsoft Sylvie Online (Natural) - French (Canada) (fr-CA)</option><option value="17">Microsoft Denise Online (Natural) - French (France) (fr-FR)</option><option value="18">Microsoft Katja Online (Natural) - German (Germany) (de-DE)</option><option value="19">Microsoft Ekaterina Online - Russian (Russia) (ru-RU)</option><option value="20">Microsoft Hayley Online - English (Australia) (en-AU)</option><option value="21">Microsoft Elsa Online (Natural) - Italian (Italy) (it-IT)</option><option value="22">Microsoft SunHi Online (Natural) - Korean (Korea) (ko-KR)</option><option value="23">Microsoft Hanna Online - Dutch (Netherlands) (nl-NL)</option><option value="24">Microsoft Elvira Online (Natural) - Spanish (Spain) (es-ES)</option><option value="25">Microsoft Emel Online (Natural) - Turkish (Turkey) (tr-TR)</option><option value="26">Microsoft Paulina Online - Polish (Poland) (pl-PL)</option></select>
+
+    <div id="viewer">
+      <h4>心拍数</h4>
+      <canvas id="chart" width="480"></canvas>
+      <div class="graph"></div>
+      <span id="elapsed"></span>
+    </div>
+  </div>
+</div>
+
+  <script>
+    //localStorage
+    //  questionType {calc_plus, calc_multiplication}
+    //  age
+    //  minutes１
+    //  distance  *resultに渡すのみ
+    //  difficulty  {easy, noraml, hard}
+    let stQuestionType = localStorage.getItem('questionType');
+    let stDifficulty = localStorage.getItem('difficulty');
+    let stAge = Number(localStorage.getItem('age'));
+    let stMinutes = Number(localStorage.getItem('minutes'));
+
+    const questionDiv = document.getElementById('question');
+    const answerDiv = document.getElementById('number_result');
+    const fullVoiceDiv = document.getElementById('fullVoice_result');
+    const maruDiv = document.getElementById('maru');
+    const batuDiv = document.getElementById('batu');
+    const instructionDiv = document.getElementById('instruction');
+    let questionWait = false;
+    let detector, video;
+    let lastY = null, moveCount = 0;
+    let whichUp = 0;		//0:Left Up, 1:Right Up
+    let changeCount = 0;
+    let totalCount = 0;
+    let distance = 0;
+    let leftWristScore = -1;
+    let rightWristScore = -1;
+    let leftWristY = -1;
+    let rightWristY = -1;
+    let startTime = 0;
+    let nowTime = 0;
+    let b = null;
+    let c = null;
+    // 問題数をカウントする変数
+    let questionCount = 0;
+    // 正答数をカウントする変数
+    let score = 0;
+    let quizflag = false;
+    let MaxHr = 200;
+
+    //5分を測るための変数
+    let startTime5 = 0;
+    let timeflag = 0;
+    let counttime = 0;
+    let x = 0;
+    let m = 0;
+    let s = 0;
+    let lastDistance = 0;
+    let previousCount = 0;  // 前回計測時の totalCount
+    let lastSpeed = 0;      // 最後に計算した速度（km/h）
+    let scoreFlag = 0;
+    let questionText = "";
+    let answerText = "";
+    const store = {};
+    let initStartFlag = false;
+    let isRunning = false;
+    let detectLevel = 0.1;
+
+    //脳トレ用変数
+    let brainQuestionStatus = 0;
+    let brainQuestionText = null;
+    let brainAnswerText = null;
+    let brainTarget = 0;
+    const brainMax = 5;
+
+    async function init() {
+      stQuestionType = stQuestionType == null ? "calc_plus" : stQuestionType;
+      stDifficulty = stDifficulty == null ? "easy" : stDifficulty;
+      stAge = stAge == 0 ? 20 : stAge;
+      stMinutes = stMinutes == 0 ? 600000 : stMinutes;
+      
+      if (stQuestionType == "brain_training") {
+        questionDiv.style.fontSize = "20px";
+        fetchGeminiQuestion();
+      } else {
+        questionDiv.style.fontSize = "60px";
+      }
+      
+      startListening();
+      loadVoices();
+      speechSynthesis.onvoiceschanged = loadVoices;
+
+      // カメラ取得
+      video = document.getElementById('video');
+      const constraints = {
+        video:{
+          width:{ideal:320},
+          height:{ideal:240}
+        }
+      };
+      const stream = await navigator.mediaDevices.getUserMedia(constraints);
+      video.srcObject = stream;
+
+      // MoveNetロード
+      detector = await poseDetection.createDetector(poseDetection.SupportedModels.MoveNet);
+
+      startTimer();
+
+      // 推定ループ開始
+      detectLoop();
+    }
+
+    const age = stAge;
+    if(age == 25){
+      MaxHr = 200;
+    }else if(age == 35){
+      MaxHr = 190;
+    }else if(age == 45){
+      MaxHr = 180;
+    }else if(age == 55){
+      MaxHr = 170;
+    }else if(age == 65){
+      MaxHr = 160;
+    }
+
+    // 1秒ごとに速度と心拍数を更新
+    function getHeartRate() {
+      setInterval(() => {
+        // 今のトータルの腕振り回数
+        const currentCount = totalCount;
+
+        // この1秒間に増えた回数
+        const deltaCount = currentCount - previousCount;
+        previousCount = currentCount;
+
+        // 1ステップあたり 0.8m と仮定（左右入れ替え1回 = 0.8m）
+        const distancePerStepMeters = 0.8;
+
+        // この1秒間の移動距離（m）
+        const distanceThisSecondMeters = deltaCount * distancePerStepMeters;
+
+        // 1秒間なので、そのまま m/s
+        const speedMps = distanceThisSecondMeters; // /1 は省略
+
+        // km/h に変換
+        const speedKmh = speedMps * 3.6;
+        lastSpeed = speedKmh;
+
+        // 速度表示
+        if(speedKmh >= 20){
+          document.getElementById('speed').innerText =
+            "時速： 20 km/h";
+        }else if (speedKmh > 0) {
+          document.getElementById('speed').innerText =
+            "時速： " + speedKmh.toFixed(2) + " km/h";
+        } else {
+          document.getElementById('speed').innerText =
+            "時速： 0.00 km/h";
+        }
+
+        
+        // 心拍数推定
+          if(speedKmh >= 20){
+            heartRate = MaxHr;
+          }else if(speedKmh >= 15){
+            heartRate = MaxHr * 0.9;
+          }else if(speedKmh >= 12){
+            heartRate = MaxHr * 0.8;
+          }else if(speedKmh >= 10){
+            heartRate = MaxHr * 0.7;
+          }else if(speedKmh >= 8){
+            heartRate = MaxHr * 0.6;
+          }else if(speedKmh < 7){
+            if(speedKmh == 0){
+              heartRate = 60;
+            }else{
+              heartRate = MaxHr * 0.5;
+            }
+          }
+        
+
+        // グラフに追加
+        const chartData = store.chart.data.datasets[0].data;
+        if (chartData.length > 100) {
+          chartData.shift();
+        }
+        chartData.push(heartRate);
+
+        store.chart.update();
+
+      }, 1000);
+    }
+
+    function startTimer() {
+      if (startTime5 === 0) {
+        startTime5 = performance.now();
+      }
+      // 1秒ごとに更新
+      timer = setInterval(time, 1000);
+    }
+
+    //時間を測る関数
+    function time() {
+      const now = performance.now();
+      //経過時間
+      counttime = now - startTime5;
+      //残り時間
+      const countDown = Math.max(stMinutes - counttime, 0);
+
+      x = Math.ceil(countDown / 1000);
+      m = Math.floor(x / 60);
+      s = x % 60;
+      document.getElementById('countDown').innerText = m + " 分" + s + " 秒";
+
+      document.getElementById('elapsed').innerText =
+        "経過 " + Math.floor(counttime / 60000) + " 分" + Math.floor((counttime % 60000) / 1000) + " 秒";
+
+      if (counttime >= stMinutes) {
+        timeflag = 1;
+        clearInterval(timer); // タイマー停止
+      }
+
+      if (countDown == 0) {
+        //localStorage.setItem('minutes', stMinutes);
+        localStorage.setItem('distance', distance);
+        localStorage.setItem('score', score);
+        window.location.href = 'result.html';
+      }
+    }
+
+
+    async function detectLoop() {
+      isRunning = await isRunningCheck();
+      if (isRunning && (!questionText || questionText.length == 0)) {
+        [questionText, answerText] = generateCalcQuestion();
+        questionDiv.innerText = questionText;
+      }
+      if (questionText && questionText.length > 0) {
+          instructionDiv.style.display = isRunning ? "none" : "block";  //走ってくださいを消す
+      }
+
+      requestAnimationFrame(detectLoop);
+    }
+
+    async function isRunningCheck()
+    {
+      const poses = await detector.estimatePoses(video);
+      document.getElementById('poses').innerText = poses.length;
+      if (poses.length == 0) return;
+
+      const keypoints = poses[0].keypoints;
+      document.getElementById('current_count').innerText = changeCount;
+      if (startTime == 0) {
+        startTime = performance.now();
+      }
+
+      getChangeCount(keypoints);
+      nowTime = performance.now();
+      //console.log("changeCount = " + changeCount);
+
+      /*if（現在の経過時間から計測を開始した時間が1秒以内（1000ミリ秒））*/
+      if (nowTime - startTime > 1000) {
+          let txt = "止まってる";
+          isRunning = false;
+          if (changeCount >= 2) {
+            txt = "走ってる";
+            isRunning = true;
+            answerDiv.innerText = "";
+          } else if (changeCount >= 1) {
+            txt = "歩いてる";
+            isRunning = false;
+          }
+          startTime = 0;
+          changeCount = 0;
+        //console.log("isRunning = " + isRunning);
+      }
+
+      return isRunning;
+    }
+
+    function getChangeCount(keypoints) {
+        let videoObj = document.getElementById('video_parent').getBoundingClientRect();
+        let leftRect = document.getElementById('left_rect');
+        let rightRect = document.getElementById('right_rect');
+
+      /*左手首*/
+        const lw = keypoints.find(p => p.name === 'left_wrist');
+        const lwOk = lw && lw.score > detectLevel && (lw.y + 30) < videoObj.height;
+        leftRect.style.display = !lw || (lw.y + 30 > videoObj.height) ? 'none' : 'block';          
+        if (lwOk) {
+          //console.log("### lw score = " + lw.score);
+          document.getElementById('div_left_wrist').innerText = lw.y;
+          document.getElementById('div_left_diff').innerText = Math.abs(leftWristY - lw.y);
+          leftWristScore = lw.score;
+          leftWristY = lw.y;
+          /*左手首のy座標（高さ）*/
+          leftRect.style.top = videoObj.top + lw.y + "px";
+          /*左手首のx座標（横）*/
+          leftRect.style.left = videoObj.left + lw.x + "px";
+        }
+
+        /*右手首*/
+        const rw = keypoints.find(p => p.name === 'right_wrist');
+        const rwOk = rw && rw.score > detectLevel && (rw.y + 30) < videoObj.height;
+        rightRect.style.display = !rw || (rw.y + 30 > videoObj.height) ? 'none' : 'block';
+        if (rwOk) {
+          //console.log("### rw score = " + rw.score);
+          document.getElementById('div_right_wrist').innerText = rw.y;
+          document.getElementById('div_right_diff').innerText = Math.abs(rightWristY - rw.y);
+          rightWristScore = rw.score;
+          rightWristY = rw.y;
+          /*右手首のy座標（高さ）*/
+          rightRect.style.top = videoObj.top + rw.y + "px";
+          /*右手首のx座標（横）*/
+          rightRect.style.left = videoObj.left + rw.x + "px";
+        }
+
+        /*whichup=0（左手が上）
+          whichup=1（右手が上）*/
+
+        /*右手が上かつwhichup=0 または 左手が上かつwhichup=1の場合、1回とカウントする（左右が入れ替わる場合）*/
+        if (lwOk && rwOk) {
+          if ((rightWristY > leftWristY && whichUp == 0) ||
+            (rightWristY < leftWristY && whichUp == 1)) {
+            //console.log("@@@ lw.score = " + lw.score + ", rw.score = " + rw.score);
+            changeCount++;
+            totalCount++;
+          }
+          whichUp = rightWristY < leftWristY ? 0 : 1;
+        }
+
+        //走行距離を計算（cm）
+        distance = totalCount * 80
+        let changedistance;
+        //走行距離が1km以上の場合、kmで小数第2までを表示
+        if (distance >= 100000) {
+          // 100000cm = 1km
+          changedistance = distance / 100000;
+          document.getElementById('distanceshow').innerText = "走行距離：" + changedistance.toFixed(2) + " km";
+          //走行距離が1km未満の場合、mで小数第2までを表示
+        } else {
+          // 100cm = 1m
+          changedistance = distance / 100;
+          document.getElementById('distanceshow').innerText = "走行距離：" + changedistance.toFixed(2) + " m";
+        }
+    }
+
+    // 音声認識の初期化
+    const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+    recognition.lang = 'ja-JP'; // 日本語
+    recognition.interimResults = true; // 確定結果のみ
+    recognition.continuous = false; // 常時認識
+
+    // 音声認識の結果を受け取る
+    recognition.onresult = function(event) {
+      const last = event.results.length - 1;
+      const transcript = event.results[last][0].transcript.trim().replace(/。+$/, "");
+      
+      const fullText = transcript;
+      const converted = fullText.split("").map(ch => kanjiToDigit[ch] ?? ch).join("");
+      const onlyNumber = converted.match(/\d+/)?.[0] ?? "";
+
+      console.log("全文:", fullText);
+      console.log("数字だけ:", onlyNumber);
+
+      checkAnswer(onlyNumber, fullText);
+    };
+
+    // ②漢数字をアラビア数字に変換
+      const kanjiToDigit = {
+        "一": "1", "二": "2", "三": "3", "四": "4", "五": "5",
+        "六": "6", "七": "7", "八": "8", "九": "9",
+        "十": "10", "百": "100"
+      };
+
+
+    // 音声認識のエラー処理
+    recognition.onerror = function (event) {
+      console.error("❌ 音声認識エラー:", event.error);
+    };
+
+    recognition.onend = () => {
+      console.log("🔁 音声認識が終了したので再開します");
+      recognition.start();
+    };
+
+    // 音声認識を開始する関数
+    function startListening() {
+      recognition.start();
+      console.log("🎤 音声認識を開始しました");
+    }
+
+    function getDfficulty() {
+        switch (stDifficulty) {
+            case "easy":
+              return 0;
+            case "normal":
+              return 1;
+            case "hard":
+              return 2;
+        }
+    }
+
+    function generateCalcQuestion() {
+        let diffRand = Math.random();
+        let num1 = getDfficulty() <= 1 ? 10 : (diffRand < 0.8 ? 10 : 100);
+        let num2 = getDfficulty() == 0 ? 10 : (diffRand < 0.4 ? 10 : 100);
+        let question;
+        let answer;
+        scoreFlag = num1.length == 1 && num2.length == 1 ? 1 :
+                    num1.length == 1 && num2.length != 1 ? 2 : 3;
+
+        if (stQuestionType.startsWith("calc_"))
+        {
+          let a = Math.max(1, Math.floor(Math.random() * num1) - 1);
+          let b = Math.max(1, Math.floor(Math.random() * num2) - 1);
+          switch (stQuestionType) {
+              case "calc_plus":
+                question = `${a} + ${b} =`
+                answer = (a + b);
+                break;
+              case "calc_multiplication":
+                question = `${a} x ${b} =`
+                answer = (a * b);
+                break;
+          }
+        } else if (stQuestionType == "brain_training") {
+          question = brainQuestionText;
+          answer = brainAnswerText;
+          brainQuestionText = null;
+          brainAnswerText = null;
+          fetchGeminiQuestion();
+        }
+      
+        return [question, answer];
+    }
+
+    // checkAnswer() を修正して、正解時に次の問題を出す
+    async function checkAnswer(word,pass) {
+      if (pass.length > 0) {
+        fullVoice_result.innerText = pass;
+      }
+      if (questionText && questionText.length > 0 && !isRunning) return;
+
+      const result = word.split("").map(ch => kanjiToDigit[ch] ?? ch).join("");
+      if (result.length == 0) {
+        return;
+      }
+      answerDiv.innerText = result;
+
+      if (Number(result) == answerText) {
+        playPingPong();
+        maruDiv.style.display = "block";  //⭕️を出す
+        console.log(maruDiv);
+        if (scoreFlag == 1) {
+          score++;
+        } else if(scoreFlag == 3){
+          score += 3;
+        } else if(scoreFlag == 5){
+          score += 5;
+        }
+        await new Promise(resolve => setTimeout(resolve, 800)); 
+        maruDiv.style.display = "none";   //⭕️を消す
+
+        // 正解したら次の問題を出す
+        questionText = "";
+        answerText = "";
+        questionDiv.innerText = questionText;
+      } else if (pass.includes("パス")) {
+        //パスを宣言した場合、スコアを-1し、別の問題を出題する
+        questionText = "";
+        answerText = "";
+        questionDiv.innerText = questionText;
+        score--;
+        console.log("パスしました");
+      } else {
+          batuDiv.style.display = "block"; 
+          playWrongSound();
+          await new Promise(resolve => setTimeout(resolve, 800)); 
+          batuDiv.style.display = "none";
+      }
+      
+      addQuestionCount();
+      fullVoice_result.innerText = "";
+      answerDiv.innerText = "";
+    }    
+
+    function hideMessage() {
+      score.innerText = ``;
+    }
+
+    function addQuestionCount() {
+      document.getElementById('scoreShow').innerText = `${score}点`;
+    }
+
+
+    //正解・不正解音関数
+    //ピンポン音出す
+    function playPingPong() {
+      return;
+      // const ctx = new (window.AudioContext || window.webkitAudioContext)();
+
+      // // ピン音（高め）
+      // const pin = ctx.createOscillator();
+      // pin.type = 'sine';
+      // pin.frequency.setValueAtTime(880, ctx.currentTime); // 高音
+      // pin.connect(ctx.destination);
+      // pin.start();
+      // pin.stop(ctx.currentTime + 0.2);
+
+      // // ポン音（低め）
+      // const pong = ctx.createOscillator();
+      // pong.type = 'sine';
+      // pong.frequency.setValueAtTime(440, ctx.currentTime + 0.3); // 低音
+      // pong.connect(ctx.destination);
+      // pong.start(ctx.currentTime + 0.3);
+      // pong.stop(ctx.currentTime + 0.5);
+    }
+
+    function playWrongSound() {
+      return;
+      const ctx = new (window.AudioContext || window.webkitAudioContext)();
+
+      // ブ音（低め）
+      const bu1 = ctx.createOscillator();
+      bu1.type = 'square';
+      bu1.frequency.setValueAtTime(220, ctx.currentTime); // 低音
+      bu1.connect(ctx.destination);
+      bu1.start();
+      bu1.stop(ctx.currentTime + 0.2);
+
+      // ブ音（もう一発）
+      const bu2 = ctx.createOscillator();
+      bu2.type = 'square';
+      // 同じ音を少し遅れて
+      bu2.frequency.setValueAtTime(220, ctx.currentTime + 0.3);
+      bu2.connect(ctx.destination);
+      bu2.start(ctx.currentTime + 0.3);
+      bu2.stop(ctx.currentTime + 0.5);
+    }
+
+
+    const synth = window.speechSynthesis;
+    const voiceSelect = document.getElementById("voiceSelect");
+
+    // 利用可能な声を読み込む
+    function loadVoices() {
+      const voices = synth.getVoices();
+      voiceSelect.innerHTML = "";
+
+      voices.forEach((voice, index) => {
+        const option = document.createElement("option");
+        option.value = index;
+        option.textContent = `${voice.name} (${voice.lang})`;
+        voiceSelect.appendChild(option);
+      });
+    }
+
+    // 読み上げ処理
+    function speak(text) {
+      return;
+      // recognition.stop();
+
+      const rate = document.getElementById("rate").value;
+      const selectedVoice = synth.getVoices()[voiceSelect.value];
+
+      const utter = new SpeechSynthesisUtterance(text);
+      utter.rate = rate;
+      utter.voice = selectedVoice;
+
+      // utter.onend = () => {
+      //   recognition.start();
+      // };
+
+      synth.speak(utter);
+    }
+
+    store.chart = new Chart(document.querySelector('#chart').getContext('2d'), {
+      type: 'line',
+      data: {
+        labels: Array(100),
+        datasets: [{
+          label: 'Heart Rate (bpm)',
+          backgroundColor: '#f55',
+          borderColor: '#f55',
+          fill: false,
+          data: []
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        duration: 300,
+        scales: {
+          yAxes: [
+            {
+              ticks: {
+                min: 60,
+                max: 200,
+                stepSize: 10
+              }
+            }
+          ]
+        }
+      }
+    });
+
+    function updateChart(newValue) {
+      const chart = store.chart;
+      const maxPoints = 100;
+
+      // ラベルとデータを追加
+      chart.data.labels.push("");
+      chart.data.datasets[0].data.push(newValue);
+
+      // 最大数を超えたら先頭を削除
+      if (chart.data.labels.length > maxPoints) {
+        chart.data.labels.shift();
+        chart.data.datasets[0].data.shift();
+      }
+
+      chart.update();
+    }
+
+    async function fetchGeminiQuestion() {
+      if (brainQuestionStatus > 0) return;
+      brainQuestionStatus = 1;
+      try {
+        const res = await fetch("https://nlkabje6na.execute-api.ap-southeast-2.amazonaws.com", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ questionType: "脳トレ" })
+        });
+    
+        const raw = await res.json();
+        const data = typeof raw.body === "string" ? JSON.parse(raw.body) : raw;
+    
+        if (!data.question) {
+          console.error("Lambdaレスポンス不正", data);
+          return;
+        }
+
+        console.log(data.question);
+        // store.currentQuiz = data;
+    
+        brainQuestionText =
+           data.question + "\n" +
+           data.choices.map((c,i)=>`${i+1}. ${c}`).join(" ");
+        brainAnswerText = Number(data.correctIndex) + 1;
+        
+      } catch (e) {
+        console.error("Gemini取得失敗", e);
+      } finally {
+        brainQuestionStatus = 0;
+      }
+    }
+    
+    init();
+  </script>
+
+
+
+</body></html>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
