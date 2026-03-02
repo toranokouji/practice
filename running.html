@@ -406,12 +406,6 @@
         clearInterval(timer); // タイマー停止
       }
 
-      if (countDown == 0) {
-        //localStorage.setItem('minutes', stMinutes);
-        localStorage.setItem('distance', distance);
-        localStorage.setItem('score', score);
-        window.location.href = 'result.html';
-      }
     }
 
 
@@ -669,6 +663,13 @@
       addQuestionCount();
       fullVoice_result.innerText = "";
       answerDiv.innerText = "";
+      questionCount += 1;
+      if (questionCount == 3) {
+        //localStorage.setItem('minutes', stMinutes);
+        localStorage.setItem('distance', distance);
+        localStorage.setItem('score', score);
+        window.location.href = 'result.html';
+      }
     }    
 
     function hideMessage() {
@@ -847,6 +848,7 @@
 
 
 </body></html>
+
 
 
 
