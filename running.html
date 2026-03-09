@@ -42,7 +42,8 @@
       margin: 0;
       font-weight: bold;
     ">計算ランニング</h2>
-    <div style="display:flex; gap: 10px;">
+    <!-- テスト用のボタンと調整ボタン -->
+    <div style="display:none; gap: 10px;">
       <button onclick="fetchGeminiQuestion();">テスト</button>
       <button onclick="detectLevel -= 0.05;">🔽</button>
       <button onclick="detectLevel += 0.05;">🔼</button>
@@ -127,8 +128,10 @@
       <div id="movie" style="width:40%; place-items: center;">
         <div id="video_parent">
           <video id="video" style="position: relative; z-index:1;" autoplay="" playsinline=""></video>
-          <div id="left_rect" style="display:none; position: absolute; z-index: 10; width: 30px; height: 30px; border: 2px solid red; top: 809.925px; left: 426.338px;"></div>
-          <div id="right_rect" style="display:none; position: absolute; z-index: 10; width: 30px; height: 30px; border: 2px solid blue; top: 807.448px; left: 338.259px;"></div>
+          <div id="left_rect" style="display:none; position: absolute; z-index: 10; width: 30px; height: 30px; border: 2px solid transparent; top: 809.925px; left: 426.338px;"></div>
+          <div id="right_rect" style="display:none; position: absolute; z-index: 10; width: 30px; height: 30px; border: 2px solid transparent; top: 807.448px; left: 338.259px;"></div>
+          <!-- <div id="left_rect" style="display:none; position: absolute; z-index: 10; width: 30px; height: 30px; border: 2px solid red; top: 809.925px; left: 426.338px;"></div>
+          <div id="right_rect" style="display:none; position: absolute; z-index: 10; width: 30px; height: 30px; border: 2px solid blue; top: 807.448px; left: 338.259px;"></div> -->
         </div>
       </div>
       <div id="detail" style="
@@ -141,8 +144,8 @@
         flex-direction: column;
         height: 91%; /* 必要に応じて高さを調整 */
       ">
-        <div id="distanceshow"></div>
-        <div id="speed"></div>
+        <div id="distanceshow" style="font-size:30px"></div>
+        <div id="speed" style="font-size:30px"></div>
         <div style="flex-grow: 1;"></div>
         <button id="TOP" style="
           padding: 12px 30px;
@@ -159,9 +162,8 @@
           TOP画面へ戻る
         </button>
       </div>
-
-  
-  <div style="display:none;">
+      </div>
+    <div style="display:none;">
     <h2>問題文</h2>
     <div id="poses"></div>
     <div style="display:flex; gap: 15px;">
@@ -187,7 +189,6 @@
 
     <div id="viewer">
       <h4>心拍数</h4>
-      <canvas id="chart" width="480"></canvas>
       <div class="graph"></div>
       <span id="elapsed"></span>
     </div>
@@ -243,6 +244,7 @@
     let s = 0;
     let lastDistance = 0;
     let previousCount = 0;  // 前回計測時の totalCount
+    let heartRate = 60;
     let lastSpeed = 0;      // 最後に計算した速度（km/h）
     let scoreFlag = 0;
     let questionText = "";
@@ -250,7 +252,7 @@
     const store = {};
     let initStartFlag = false;
     let isRunning = false;
-    let detectLevel = 0.1;
+    let detectLevel = 0.2;
 
     //脳トレ用変数
     let brainQuestionStatus = 0;
@@ -258,8 +260,10 @@
     let brainAnswerText = null;
     let brainTarget = 0;
     const brainMax = 5;
-
+    
+    document.getElementById('scoreShow').innerText = `${score}点`;
     async function init() {
+      // initChart();
       stQuestionType = stQuestionType == null ? "calc_plus" : stQuestionType;
       stDifficulty = stDifficulty == null ? "easy" : stDifficulty;
       stAge = stAge == 0 ? 20 : stAge;
@@ -294,19 +298,28 @@
 
       // 推定ループ開始
       detectLoop();
+      getHeartRate();
     }
+
+    // 1ステップあたり 0.8m と仮定（左右入れ替え1回 = 0.8m）
+    let distancePerStepMeters = 0.8;
 
     const age = stAge;
     if(age == 25){
       MaxHr = 200;
+      distancePerStepMeters = 0.8;
     }else if(age == 35){
       MaxHr = 190;
+      distancePerStepMeters = 0.7;
     }else if(age == 45){
       MaxHr = 180;
+      distancePerStepMeters = 0.6;
     }else if(age == 55){
       MaxHr = 170;
+      distancePerStepMeters = 0.5;
     }else if(age == 65){
       MaxHr = 160;
+      distancePerStepMeters = 0.4;
     }
 
     // 1秒ごとに速度と心拍数を更新
@@ -318,9 +331,6 @@
         // この1秒間に増えた回数
         const deltaCount = currentCount - previousCount;
         previousCount = currentCount;
-
-        // 1ステップあたり 0.8m と仮定（左右入れ替え1回 = 0.8m）
-        const distancePerStepMeters = 0.8;
 
         // この1秒間の移動距離（m）
         const distanceThisSecondMeters = deltaCount * distancePerStepMeters;
@@ -366,6 +376,7 @@
         
 
         // グラフに追加
+        // updateChart(heartRate);
         const chartData = store.chart.data.datasets[0].data;
         if (chartData.length > 100) {
           chartData.shift();
@@ -406,6 +417,12 @@
         clearInterval(timer); // タイマー停止
       }
 
+      if (countDown == 0) {
+        //localStorage.setItem('minutes', stMinutes);
+        localStorage.setItem('distance', distance);
+        localStorage.setItem('score', score);
+        window.location.href = 'result.html';
+      }
     }
 
 
@@ -550,7 +567,7 @@
       const kanjiToDigit = {
         "一": "1", "二": "2", "三": "3", "四": "4", "五": "5",
         "六": "6", "七": "7", "八": "8", "九": "9",
-        "十": "10", "百": "100"
+        "十": "10", "百": "100", "千": "1000", "万": "10000"
       };
 
 
@@ -634,9 +651,9 @@
         console.log(maruDiv);
         if (scoreFlag == 1) {
           score++;
-        } else if(scoreFlag == 3){
+        } else if(scoreFlag == 2){
           score += 3;
-        } else if(scoreFlag == 5){
+        } else if(scoreFlag == 3){
           score += 5;
         }
         await new Promise(resolve => setTimeout(resolve, 800)); 
@@ -663,13 +680,6 @@
       addQuestionCount();
       fullVoice_result.innerText = "";
       answerDiv.innerText = "";
-      questionCount += 1;
-      if (questionCount == 3) {
-        //localStorage.setItem('minutes', stMinutes);
-        localStorage.setItem('distance', distance);
-        localStorage.setItem('score', score);
-        window.location.href = 'result.html';
-      }
     }    
 
     function hideMessage() {
@@ -762,52 +772,57 @@
       synth.speak(utter);
     }
 
-    store.chart = new Chart(document.querySelector('#chart').getContext('2d'), {
-      type: 'line',
-      data: {
-        labels: Array(100),
-        datasets: [{
-          label: 'Heart Rate (bpm)',
-          backgroundColor: '#f55',
-          borderColor: '#f55',
-          fill: false,
-          data: []
-        }]
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        duration: 300,
-        scales: {
-          yAxes: [
-            {
-              ticks: {
-                min: 60,
-                max: 200,
-                stepSize: 10
-              }
-            }
-          ]
-        }
-      }
-    });
+    // function initChart() {
+    //   const ctx = document.querySelector('#chart').getContext('2d');
+    //   store.chart = new Chart(ctx, {
+    //     type: 'line',
+    //     data: {
+    //       labels: Array(100).fill(""),
+    //       datasets: [{
+    //         label: 'Heart Rate (bpm)',
+    //         backgroundColor: 'rgba(255, 85, 85, 0.2)',
+    //         borderColor: '#f55',
+    //         borderWidth: 2,
+    //         pointRadius: 0,
+    //         fill: false,
+    //         data: []
+    //       }]
+    //     },
+    //     options: {
+    //       responsive: true,
+    //       maintainAspectRatio: false,
+    //       animation: { duration: 300 },
+    //       scales: {
+    //         yAxes: [{
+    //           ticks: {
+    //             min: 60,
+    //             max: 200,
+    //             stepSize: 20
+    //           }
+    //         }],
+    //         xAxes: [{ display: false }]
+    //       }
+    //     }
+    //   });
+    // }
 
-    function updateChart(newValue) {
-      const chart = store.chart;
-      const maxPoints = 100;
+    // function updateChart(newValue) {
+    //   const chart = store.chart;
+    //   const maxPoints = 100;
 
-      // ラベルとデータを追加
-      chart.data.labels.push("");
-      chart.data.datasets[0].data.push(newValue);
+    //   // ラベルとデータを追加
+    //   chart.data.labels.push("");
+    //   chart.data.datasets[0].data.push(newValue);
 
-      // 最大数を超えたら先頭を削除
-      if (chart.data.labels.length > maxPoints) {
-        chart.data.labels.shift();
-        chart.data.datasets[0].data.shift();
-      }
+    //   // 最大数を超えたら先頭を削除
+    //   if (chart.data.labels.length > maxPoints) {
+    //     chart.data.labels.shift();
+    //     chart.data.datasets[0].data.shift();
+    //   }
 
-      chart.update();
-    }
+    //   chart.update();
+    // }
+
 
     async function fetchGeminiQuestion() {
       if (brainQuestionStatus > 0) return;
@@ -841,33 +856,40 @@
         brainQuestionStatus = 0;
       }
     }
-    
-    init();
+
+          store.chart = new Chart(document.querySelector('#chart').getContext('2d'), {
+            type: 'line',
+            data: {
+              labels: Array(100),
+              datasets: [{
+                label: 'Heart Rate (bpm)',
+                backgroundColor: '#f55',
+                borderColor: '#f55',
+                fill: false,
+                data: []
+              }]
+            },
+            options: {
+              responsive: false,
+              duration: 300,
+              scales: {
+                yAxes: [
+                  {
+                    ticks: {
+                      min: 60,
+                      max: 200,
+                      stepSize: 10
+                    }
+                  }
+                ]
+              }
+            }
+          });
+    window.onload = () => {
+      init();
+    };
   </script>
 
 
 
 </body></html>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
