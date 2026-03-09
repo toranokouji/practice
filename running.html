@@ -417,12 +417,7 @@
         clearInterval(timer); // タイマー停止
       }
 
-      if (questionCount == 3) {
-        //localStorage.setItem('minutes', stMinutes);
-        localStorage.setItem('distance', distance);
-        localStorage.setItem('score', score);
-        window.location.href = 'result.html';
-      }
+      
     }
 
 
@@ -658,6 +653,13 @@
         }
         await new Promise(resolve => setTimeout(resolve, 800)); 
         maruDiv.style.display = "none";   //⭕️を消す
+        questionCount++;
+        if (questionCount == 3) {
+          //localStorage.setItem('minutes', stMinutes);
+          localStorage.setItem('distance', distance);
+          localStorage.setItem('score', score);
+          window.location.href = 'result.html';
+        }
 
         // 正解したら次の問題を出す
         questionText = "";
@@ -687,7 +689,6 @@
     }
 
     function addQuestionCount() {
-      questionCount++;
       document.getElementById('scoreShow').innerText = `${score}点`;
     }
 
@@ -894,4 +895,5 @@
 
 
 </body></html>
+
 
