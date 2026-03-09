@@ -417,7 +417,7 @@
         clearInterval(timer); // タイマー停止
       }
 
-      if (countDown == 0) {
+      if (questionCount == 3) {
         //localStorage.setItem('minutes', stMinutes);
         localStorage.setItem('distance', distance);
         localStorage.setItem('score', score);
@@ -687,6 +687,7 @@
     }
 
     function addQuestionCount() {
+      questionCount++;
       document.getElementById('scoreShow').innerText = `${score}点`;
     }
 
@@ -893,3 +894,4 @@
 
 
 </body></html>
+
