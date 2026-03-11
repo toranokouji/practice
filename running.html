@@ -648,6 +648,8 @@
         questionDiv.innerText = questionText;
         score--;
         console.log("パスしました");
+        addQuestionCount();
+        return;
       }else if (Number(result) == answerText) {
         playPingPong();
         maruDiv.style.display = "block";  //⭕️を出す
@@ -897,6 +899,7 @@
 
 
 </body></html>
+
 
 
 
