@@ -632,15 +632,6 @@
       if (pass.length > 0) {
         fullVoice_result.innerText = pass;
       }
-      if (questionText && questionText.length > 0 && !isRunning) return;
-
-      const result = word.split("").map(ch => kanjiToDigit[ch] ?? ch).join("");
-      if (result.length == 0) {
-        return;
-      }
-      answerDiv.innerText = result;
-
-
       if (pass.includes("パス")) {
         //パスを宣言した場合、スコアを-1し、別の問題を出題する
         questionText = "";
@@ -650,7 +641,18 @@
         console.log("パスしました");
         addQuestionCount();
         return;
-      }else if (Number(result) == answerText) {
+      }
+      if (questionText && questionText.length > 0 && !isRunning) return;
+
+      const result = word.split("").map(ch => kanjiToDigit[ch] ?? ch).join("");
+      if (result.length == 0) {
+        return;
+      }
+      answerDiv.innerText = result;
+
+
+      
+      if (Number(result) == answerText) {
         playPingPong();
         maruDiv.style.display = "block";  //⭕️を出す
         console.log(maruDiv);
@@ -899,6 +901,7 @@
 
 
 </body></html>
+
 
 
 
