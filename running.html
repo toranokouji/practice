@@ -640,7 +640,15 @@
       }
       answerDiv.innerText = result;
 
-      if (Number(result) == answerText) {
+
+      if (pass.includes("パス")) {
+        //パスを宣言した場合、スコアを-1し、別の問題を出題する
+        questionText = "";
+        answerText = "";
+        questionDiv.innerText = questionText;
+        score--;
+        console.log("パスしました");
+      }else if (Number(result) == answerText) {
         playPingPong();
         maruDiv.style.display = "block";  //⭕️を出す
         console.log(maruDiv);
@@ -665,13 +673,7 @@
         questionText = "";
         answerText = "";
         questionDiv.innerText = questionText;
-      } else if (pass.includes("パス")) {
-        //パスを宣言した場合、スコアを-1し、別の問題を出題する
-        questionText = "";
-        answerText = "";
-        questionDiv.innerText = questionText;
-        score--;
-        console.log("パスしました");
+      
       } else {
           batuDiv.style.display = "block"; 
           playWrongSound();
@@ -895,6 +897,7 @@
 
 
 </body></html>
+
 
 
 
